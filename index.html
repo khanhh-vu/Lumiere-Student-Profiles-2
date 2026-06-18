@@ -75,6 +75,39 @@
       color: var(--navy);
     }
 
+    /* ── Refresh Button ───────────────────────────────── */
+    #refresh-btn {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .5rem .9rem;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: var(--white);
+      color: var(--navy);
+      font-family: var(--ff-body);
+      font-size: .85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .15s, border-color .15s, opacity .15s;
+      white-space: nowrap;
+    }
+    #refresh-btn:hover:not(:disabled) {
+      background: var(--off);
+      border-color: var(--navy);
+    }
+    #refresh-btn:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+    #refresh-btn .spin {
+      display: inline-block;
+      transition: transform .3s;
+    }
+    #refresh-btn.loading .spin {
+      animation: spin .7s linear infinite;
+    }
+
     /* ── Hero (dark navy) ─────────────────────────────── */
     .hero {
       background: var(--navy-deep);
@@ -398,10 +431,12 @@
     @media (max-width: 600px) {
       .hero-stats { gap: 1.5rem; }
       .grid { grid-template-columns: 1fr; }
+      #refresh-btn span:not(.spin) { display: none; }
     }
     @media (prefers-reduced-motion: reduce) {
       .card { transition: none; }
       .spinner { animation: none; }
+      #refresh-btn.loading .spin { animation: none; }
     }
   </style>
 </head>
@@ -415,10 +450,13 @@
     </div>
     <div class="header-meta">
       <div class="header-meta-text">
-        Data refreshed hourly<br>
-        <span id="last-updated">—</span>
+        Refreshes every 5 min<br>
+        Last updated: <span id="last-updated">—</span>
       </div>
-
+      <button id="refresh-btn" onclick="loadData()" aria-label="Refresh data">
+        <span class="spin">↻</span>
+        <span>Refresh</span>
+      </button>
     </div>
   </div>
 </header>
@@ -495,7 +533,7 @@
 
 <!-- ── Footer ────────────────────────────────────────── -->
 <footer>
-  © Lumiere Education · Profiles updated automatically from Airtable every hour
+  © Lumiere Education · Profiles updated automatically from Airtable
 </footer>
 
 <script>
@@ -507,6 +545,13 @@
   let ALL_STUDENTS = [];
 
   async function loadData() {
+    const btn = $('refresh-btn');
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('loading');
+      btn.querySelector('span:not(.spin)').textContent = 'Refreshing…';
+    }
+
     try {
       const res = await fetch('/api/data');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -530,8 +575,14 @@
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           <h2>Profiles unavailable</h2>
-          <p>Could not load <code>data.json</code>. Run the GitHub Actions workflow to generate it.</p>
+          <p>Could not reach <code>/api/data</code>. Check your Vercel function and environment variables.</p>
         </div>`;
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.classList.remove('loading');
+        btn.querySelector('span:not(.spin)').textContent = 'Refresh';
+      }
     }
   }
 
@@ -665,7 +716,6 @@
           : esc(s.journal))
       : '';
 
-    // ISEF Winners/Finalists use isefPublicationLink; others use publicationLink
     const rawPubLink = isISEFStatus(s.isefStatus)
       ? (s.isefPublicationLink || '')
       : (s.publicationLink || '');
@@ -694,7 +744,7 @@
   $('modal-backdrop').addEventListener('click', e => e.target === $('modal-backdrop') && closeModal());
   document.addEventListener('keydown', e => e.key === 'Escape' && closeModal());
 
-  // Initial load + auto-refresh every hour
+  // Initial load + auto-refresh every 5 minutes
   loadData();
   setInterval(loadData, 5 * 60 * 1000);
 </script>
