@@ -216,6 +216,12 @@
     select:focus { border-color: rgba(255,255,255,.4); }
     select option { background: var(--navy-deep); color: var(--white); }
 
+    /* Highlight the links filter when active */
+    #filter-links.active {
+      border-color: var(--crimson-lt);
+      background-color: rgba(232,25,60,.18);
+    }
+
     #result-count {
       font-size: .8rem;
       color: rgba(255,255,255,.35);
@@ -499,11 +505,12 @@
       <select id="filter-cohort" aria-label="Filter by cohort">
         <option value="">All Cohorts</option>
       </select>
-      <select id="filter-year" aria-label="Filter by graduation year">
-        <option value="">All Years</option>
-      </select>
       <select id="filter-country" aria-label="Filter by country">
         <option value="">All Countries</option>
+      </select>
+      <select id="filter-links" aria-label="Filter by links">
+        <option value="">All Students</option>
+        <option value="has-url">With Links Only</option>
       </select>
     </div>
     <span id="result-count"></span>
@@ -539,14 +546,25 @@
 <script>
   const $ = id => document.getElementById(id);
   const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
-  const isURL = s => { try { return /^https?:\/\//.test(s) && Boolean(new URL(s)); } catch { return false; } }
+  const isURL = s => { try { return /^https?:\/\//.test(s) && Boolean(new URL(s)); } catch { return false; } };
   const isISEFStatus = s => s && ['ISEF Winner', 'ISEF Finalist'].includes(s.trim());
+
+  // Safely extract a valid URL from a field that may arrive as a string or array from Airtable
+  function toURL(val) {
+    if (Array.isArray(val)) return val.find(v => isURL(v)) || '';
+    return isURL(val) ? val : '';
+  }
+
+  // Returns true if the student has at least one valid URL across all link fields
+  function hasAnyURL(s) {
+    return !!(toURL(s.journal) || toURL(s.publicationLink) || toURL(s.isefPublicationLink));
+  }
 
   let ALL_STUDENTS = [];
   let isLoading = false;
 
   async function loadData() {
-    if (isLoading) return; // prevent concurrent calls
+    if (isLoading) return;
 
     isLoading = true;
     const btn = $('refresh-btn');
@@ -557,7 +575,7 @@
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000); // 15 s timeout
+    const timeout = setTimeout(() => controller.abort(), 15_000);
 
     try {
       const res = await fetch('/api/data', { signal: controller.signal });
@@ -599,11 +617,13 @@
   }
 
   function resetFilters() {
-    ['filter-vertical','filter-cohort','filter-year','filter-country'].forEach(id => {
+    ['filter-vertical', 'filter-cohort', 'filter-country'].forEach(id => {
       const sel = $(id);
       while (sel.options.length > 1) sel.remove(1);
     });
     $('search').value = '';
+    $('filter-links').value = '';
+    $('filter-links').classList.remove('active');
   }
 
   function initStats() {
@@ -615,7 +635,6 @@
   function populateFilters() {
     const verticals = [...new Set(ALL_STUDENTS.map(s => s.vertical).filter(Boolean))].sort();
     const cohorts   = [...new Set(ALL_STUDENTS.map(s => s.cohort).filter(Boolean))].sort();
-    const years     = [...new Set(ALL_STUDENTS.map(s => String(s.graduationYear || '')).filter(Boolean))].sort();
     const countries = [...new Set(ALL_STUDENTS.map(s => s.country).filter(Boolean))].sort();
 
     const fill = (id, items) => {
@@ -628,7 +647,6 @@
     };
     fill('filter-vertical', verticals);
     fill('filter-cohort', cohorts);
-    fill('filter-year', years);
     fill('filter-country', countries);
   }
 
@@ -636,14 +654,14 @@
     const q        = $('search').value.trim().toLowerCase();
     const vertical = $('filter-vertical').value;
     const cohort   = $('filter-cohort').value;
-    const year     = $('filter-year').value;
     const country  = $('filter-country').value;
+    const links    = $('filter-links').value;
 
     return ALL_STUDENTS.filter(s => {
       if (vertical && s.vertical !== vertical) return false;
       if (cohort   && s.cohort !== cohort) return false;
-      if (year     && String(s.graduationYear || '') !== year) return false;
       if (country  && s.country !== country) return false;
+      if (links === 'has-url' && !hasAnyURL(s)) return false;
       if (q) {
         const hay = [s.studentName, s.researchQuestion, s.mentorField, s.journal,
                      s.cohort, s.country, s.vertical, s.isefStatus]
@@ -654,9 +672,13 @@
     });
   }
 
-  function applyFilters() { renderCards(getFiltered()); }
+  function applyFilters() {
+    // Highlight the links dropdown when it's actively filtering
+    $('filter-links').classList.toggle('active', $('filter-links').value === 'has-url');
+    renderCards(getFiltered());
+  }
 
-  ['search','filter-vertical','filter-cohort','filter-year','filter-country'].forEach(id => {
+  ['search', 'filter-vertical', 'filter-cohort', 'filter-country', 'filter-links'].forEach(id => {
     $(id).addEventListener('input', applyFilters);
     $(id).addEventListener('change', applyFilters);
   });
@@ -677,26 +699,25 @@
       return;
     }
 
-    grid.innerHTML = students.map((s, i) => `
+    grid.innerHTML = students.map((s, i) => {
+      const journalURL = toURL(s.journal);
+      return `
       <article class="card" tabindex="0" data-idx="${i}" role="button" aria-label="View profile for ${esc(s.studentName)}">
         <div class="card-header">
           <div class="card-name">${esc(s.studentName) || '—'}</div>
           ${s.country ? `<span class="card-country">${esc(s.country)}</span>` : ''}
         </div>
         <div class="card-meta">
-          ${s.vertical                  ? `<span class="tag tag-vertical">${esc(s.vertical)}</span>` : ''}
-          ${s.cohort                    ? `<span class="tag tag-cohort">${esc(s.cohort)}</span>` : ''}
-          ${s.graduationYear            ? `<span class="tag tag-year">Class of ${esc(String(s.graduationYear))}</span>` : ''}
-          ${s.mentorField               ? `<span class="tag tag-field">${esc(s.mentorField)}</span>` : ''}
-          ${isISEFStatus(s.isefStatus)  ? `<span class="tag tag-isef">${esc(s.isefStatus)}</span>` : ''}
+          ${s.vertical                 ? `<span class="tag tag-vertical">${esc(s.vertical)}</span>` : ''}
+          ${s.cohort                   ? `<span class="tag tag-cohort">${esc(s.cohort)}</span>` : ''}
+          ${s.graduationYear           ? `<span class="tag tag-year">Class of ${esc(String(s.graduationYear))}</span>` : ''}
+          ${s.mentorField              ? `<span class="tag tag-field">${esc(s.mentorField)}</span>` : ''}
+          ${isISEFStatus(s.isefStatus) ? `<span class="tag tag-isef">${esc(s.isefStatus)}</span>` : ''}
         </div>
         ${s.researchQuestion ? `<p class="card-question">${esc(s.researchQuestion)}</p>` : ''}
-        ${s.journal ? `<p class="card-journal">${
-          isURL(s.journal)
-            ? `<a href="${esc(s.journal)}" target="_blank" rel="noopener">View Journal →</a>`
-            : esc(s.journal)
-        }</p>` : ''}
-      </article>`).join('');
+        ${journalURL ? `<p class="card-journal"><a href="${esc(journalURL)}" target="_blank" rel="noopener">View Journal →</a></p>` : ''}
+      </article>`;
+    }).join('');
 
     grid.querySelectorAll('.card').forEach(card => {
       const open = () => openModal(students[+card.dataset.idx]);
@@ -722,17 +743,14 @@
         <div class="modal-value${italic ? ' italic' : ''}">${value}</div>
       </div>` : '';
 
-    const journalVal = s.journal
-      ? (isURL(s.journal)
-          ? `<a href="${esc(s.journal)}" target="_blank" rel="noopener" style="color:var(--navy);text-decoration:underline;text-underline-offset:2px">${esc(s.journal)}</a>`
-          : esc(s.journal))
+    const journalURL = toURL(s.journal);
+    const journalVal = journalURL
+      ? `<a href="${esc(journalURL)}" target="_blank" rel="noopener" style="color:var(--navy);text-decoration:underline;text-underline-offset:2px">${esc(journalURL)}</a>`
       : '';
 
-    const rawPubLink = isISEFStatus(s.isefStatus)
-      ? (s.isefPublicationLink || '')
-      : (s.publicationLink || '');
-    const pubVal = rawPubLink && isURL(rawPubLink)
-      ? `<a href="${esc(rawPubLink)}" ...>${esc(rawPubLink)}</a>`
+    const pubURL = isISEFStatus(s.isefStatus) ? toURL(s.isefPublicationLink) : toURL(s.publicationLink);
+    const pubVal = pubURL
+      ? `<a href="${esc(pubURL)}" target="_blank" rel="noopener" style="color:var(--navy);text-decoration:underline;text-underline-offset:2px">${esc(pubURL)}</a>`
       : '';
 
     $('modal-body').innerHTML = [
@@ -756,10 +774,8 @@
   $('modal-backdrop').addEventListener('click', e => e.target === $('modal-backdrop') && closeModal());
   document.addEventListener('keydown', e => e.key === 'Escape' && closeModal());
 
-  // Refresh button
   $('refresh-btn').addEventListener('click', loadData);
 
-  // Initial load + auto-refresh every hour
   loadData();
   setInterval(loadData, 60 * 60 * 1000);
 </script>
