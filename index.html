@@ -543,8 +543,12 @@
   const isISEFStatus = s => s && ['ISEF Winner', 'ISEF Finalist'].includes(s.trim());
 
   let ALL_STUDENTS = [];
+  let isLoading = false;
 
   async function loadData() {
+    if (isLoading) return; // prevent concurrent calls
+
+    isLoading = true;
     const btn = $('refresh-btn');
     if (btn) {
       btn.disabled = true;
@@ -552,8 +556,11 @@
       btn.querySelector('span:not(.spin)').textContent = 'Refreshing…';
     }
 
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000); // 15 s timeout
+
     try {
-      const res = await fetch('/api/data');
+      const res = await fetch('/api/data', { signal: controller.signal });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       ALL_STUDENTS = data.students || [];
@@ -569,15 +576,20 @@
       populateFilters();
       renderCards(ALL_STUDENTS);
     } catch (e) {
+      const msg = e.name === 'AbortError'
+        ? 'Request timed out. Please try again.'
+        : 'Could not reach <code>/api/data</code>. Check your Vercel function and environment variables.';
       $('grid').innerHTML = `
         <div class="state-msg">
           <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
             <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
           </svg>
           <h2>Profiles unavailable</h2>
-          <p>Could not reach <code>/api/data</code>. Check your Vercel function and environment variables.</p>
+          <p>${msg}</p>
         </div>`;
     } finally {
+      clearTimeout(timeout);
+      isLoading = false;
       if (btn) {
         btn.disabled = false;
         btn.classList.remove('loading');
@@ -747,7 +759,7 @@
   // Refresh button
   $('refresh-btn').addEventListener('click', loadData);
 
-  // Initial load + auto-refresh every 5 minutes
+  // Initial load + auto-refresh every hour
   loadData();
   setInterval(loadData, 60 * 60 * 1000);
 </script>
