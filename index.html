@@ -731,8 +731,8 @@
     const rawPubLink = isISEFStatus(s.isefStatus)
       ? (s.isefPublicationLink || '')
       : (s.publicationLink || '');
-    const pubVal = rawPubLink
-      ? `<a href="${esc(rawPubLink)}" target="_blank" rel="noopener" style="color:var(--navy);text-decoration:underline;text-underline-offset:2px">${esc(rawPubLink)}</a>`
+    const pubVal = rawPubLink && isURL(rawPubLink)
+      ? `<a href="${esc(rawPubLink)}" ...>${esc(rawPubLink)}</a>`
       : '';
 
     $('modal-body').innerHTML = [
