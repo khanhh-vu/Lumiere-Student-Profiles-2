@@ -453,7 +453,7 @@
         Refreshes every 5 min<br>
         Last updated: <span id="last-updated">—</span>
       </div>
-      <button id="refresh-btn" onclick="loadData()" aria-label="Refresh data">
+      <button id="refresh-btn" aria-label="Refresh data">
         <span class="spin">↻</span>
         <span>Refresh</span>
       </button>
@@ -743,6 +743,9 @@
   $('modal-close').addEventListener('click', closeModal);
   $('modal-backdrop').addEventListener('click', e => e.target === $('modal-backdrop') && closeModal());
   document.addEventListener('keydown', e => e.key === 'Escape' && closeModal());
+
+  // Refresh button
+  $('refresh-btn').addEventListener('click', loadData);
 
   // Initial load + auto-refresh every 5 minutes
   loadData();
