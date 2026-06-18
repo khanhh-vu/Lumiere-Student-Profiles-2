@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lumiere Education — Student Profiles</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ── Tokens ───────────────────────────────────────── */
+    :root {
+      --navy:        #1e2a6e;
+      --navy-deep:   #141d50;
+      --navy-darker: #0e1438;
+      --crimson:     #e8193c;
+      --crimson-lt:  #ff3355;
+      --white:       #ffffff;
+      --off:         #f5f6fb;
+      --muted:       #6b7280;
+      --border:      #dde1f0;
+
+      --ff-display: 'DM Serif Display', Georgia, serif;
+      --ff-body:    'Inter', system-ui, sans-serif;
+
+      --radius:       10px;
+      --shadow:       0 2px 12px rgba(30,42,110,.08);
+      --shadow-hover: 0 6px 28px rgba(30,42,110,.16);
+    }
+
+    /* ── Reset ────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--ff-body);
+      background: var(--navy);
+      color: var(--white);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+    img { display: block; max-width: 100%; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ── Header (white) ───────────────────────────────── */
+    .site-header {
+      background: var(--white);
+      border-bottom: 1px solid var(--border);
+      padding: 0 clamp(1.5rem, 5vw, 3rem);
+    }
+    .header-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 1rem 0;
+    }
+    .logo-wrap img {
+      height: 52px;
+      width: auto;
+    }
+    .header-meta {
+      display: flex;
+      align-items: center;
+      gap: .75rem;
+    }
+    .header-meta-text {
+      text-align: right;
+      font-size: .8rem;
+      color: var(--muted);
+    }
+    #last-updated {
+      font-weight: 600;
+      color: var(--navy);
+    }
+    #refresh-btn {
+      background: var(--navy);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      padding: .5rem .9rem;
+      font-family: var(--ff-body);
+      font-size: .8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      transition: background .15s;
+      white-space: nowrap;
+    }
+    #refresh-btn:hover { background: var(--crimson); }
+    #refresh-btn:disabled { opacity: .6; cursor: not-allowed; }
+
+    /* ── Hero (dark navy) ─────────────────────────────── */
+    .hero {
+      background: var(--navy-deep);
+      padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.5rem, 5vw, 3rem) clamp(2rem, 5vw, 3.5rem);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+    }
+    .hero-inner { max-width: 1200px; margin: 0 auto; }
+    .hero h1 {
+      font-family: var(--ff-display);
+      font-size: clamp(2rem, 5vw, 3.25rem);
+      color: var(--white);
+      line-height: 1.15;
+      max-width: 640px;
+    }
+    .hero h1 em { font-style: italic; color: var(--crimson-lt); }
+    .hero-sub {
+      margin-top: .85rem;
+      color: rgba(255,255,255,.6);
+      font-size: clamp(.9rem, 2vw, 1.05rem);
+      max-width: 520px;
+    }
+    .hero-stats {
+      display: flex;
+      gap: 2.5rem;
+      margin-top: 2rem;
+      flex-wrap: wrap;
+    }
+    .stat-item { display: flex; flex-direction: column; gap: .15rem; }
+    .stat-num {
+      font-family: var(--ff-display);
+      font-size: 2rem;
+      color: var(--white);
+      line-height: 1;
+    }
+    .stat-label {
+      font-size: .75rem;
+      color: rgba(255,255,255,.45);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    /* ── Controls (dark navy, sticky) ────────────────── */
+    .controls-bar {
+      background: var(--navy-deep);
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      padding: 1rem clamp(1.5rem, 5vw, 3rem);
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      box-shadow: 0 2px 12px rgba(0,0,0,.3);
+    }
+    .controls-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: flex;
+      gap: .75rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .search-wrap {
+      position: relative;
+      flex: 1;
+      min-width: 220px;
+    }
+    .search-wrap svg {
+      position: absolute;
+      left: .85rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: rgba(255,255,255,.4);
+      pointer-events: none;
+    }
+    #search {
+      width: 100%;
+      padding: .6rem .9rem .6rem 2.4rem;
+      border: 1.5px solid rgba(255,255,255,.15);
+      border-radius: 6px;
+      font-family: var(--ff-body);
+      font-size: .9rem;
+      color: var(--white);
+      background: rgba(255,255,255,.08);
+      outline: none;
+      transition: border-color .15s, background .15s;
+    }
+    #search:focus { border-color: rgba(255,255,255,.4); background: rgba(255,255,255,.12); }
+    #search::placeholder { color: rgba(255,255,255,.35); }
+
+    .filter-group { display: flex; gap: .5rem; flex-wrap: wrap; }
+    select {
+      padding: .6rem .85rem;
+      padding-right: 2rem;
+      border: 1.5px solid rgba(255,255,255,.15);
+      border-radius: 6px;
+      font-family: var(--ff-body);
+      font-size: .875rem;
+      color: var(--white);
+      background: rgba(255,255,255,.08);
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.5)' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right .6rem center;
+      cursor: pointer;
+      outline: none;
+      appearance: none;
+      transition: border-color .15s;
+    }
+    select:focus { border-color: rgba(255,255,255,.4); }
+    select option { background: var(--navy-deep); color: var(--white); }
+
+    #result-count {
+      font-size: .8rem;
+      color: rgba(255,255,255,.35);
+      white-space: nowrap;
+      margin-left: auto;
+    }
+
+    /* ── Main (white) ─────────────────────────────────── */
+    .main {
+      background: var(--white);
+      width: 100%;
+      padding: 2rem clamp(1.5rem, 5vw, 3rem) 4rem;
+    }
+    .grid {
+      max-width: 1200px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 1.25rem;
+    }
+
+    /* ── Card (light) ─────────────────────────────────── */
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow);
+      transition: box-shadow .2s, transform .2s;
+      display: flex;
+      flex-direction: column;
+      gap: .9rem;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: var(--crimson);
+      opacity: 0;
+      transition: opacity .2s;
+    }
+    .card:hover { box-shadow: var(--shadow-hover); transform: translateY(-2px); }
+    .card:hover::before { opacity: 1; }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: .75rem;
+    }
+    .card-name {
+      font-family: var(--ff-display);
+      font-size: 1.2rem;
+      line-height: 1.25;
+      color: var(--navy-deep);
+    }
+    .card-country {
+      font-size: .75rem;
+      background: var(--off);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: .2rem .55rem;
+      color: var(--muted);
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .card-meta { display: flex; flex-wrap: wrap; gap: .4rem; }
+
+    .tag {
+      font-size: .72rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      padding: .2rem .55rem;
+      border-radius: 4px;
+    }
+    .tag-vertical { background: #fdf4ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+    .tag-cohort   { background: #eef0fb; color: var(--navy); }
+    .tag-year     { background: #fff0f3; color: var(--crimson); border: 1px solid #ffd0d9; }
+    .tag-field    { background: #f0fdf4; color: #166534; }
+    .tag-isef     { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+
+    .card-question {
+      font-size: .9rem;
+      color: #374151;
+      line-height: 1.55;
+      border-left: 2px solid var(--crimson);
+      padding-left: .75rem;
+      font-style: italic;
+    }
+    .card-journal {
+      font-size: .82rem;
+      color: var(--muted);
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .card-journal a {
+      color: var(--navy);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+
+    /* ── Empty / Error / Loading ──────────────────────── */
+    .state-msg {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 5rem 2rem;
+      color: var(--muted);
+    }
+    .state-msg svg { margin: 0 auto 1rem; opacity: .35; }
+    .state-msg h2 {
+      font-family: var(--ff-display);
+      font-size: 1.5rem;
+      color: var(--navy);
+      margin-bottom: .5rem;
+    }
+    .state-msg code {
+      background: var(--off);
+      padding: .1rem .4rem;
+      border-radius: 4px;
+      font-size: .85em;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 3px solid var(--border);
+      border-top-color: var(--crimson);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto 1rem;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Modal ────────────────────────────────────────── */
+    .modal-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(8,12,35,.75);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      backdrop-filter: blur(4px);
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      max-width: 680px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 24px 64px rgba(0,0,0,.35);
+      padding: 2rem;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 1rem; right: 1rem;
+      background: var(--off);
+      border: none;
+      border-radius: 6px;
+      width: 32px; height: 32px;
+      display: grid; place-items: center;
+      cursor: pointer;
+      color: var(--muted);
+      font-size: 1.1rem;
+      transition: background .15s, color .15s;
+    }
+    .modal-close:hover { background: var(--border); color: var(--navy); }
+    .modal-name {
+      font-family: var(--ff-display);
+      font-size: 1.75rem;
+      color: var(--navy-deep);
+      margin-bottom: .5rem;
+      padding-right: 2.5rem;
+    }
+    .modal-divider { height: 1px; background: var(--border); margin: 1.25rem 0; }
+    .modal-section { margin-top: 1.25rem; }
+    .modal-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: var(--muted);
+      margin-bottom: .35rem;
+    }
+    .modal-value { font-size: .95rem; color: #1f2937; line-height: 1.6; }
+    .modal-value.italic {
+      font-style: italic;
+      border-left: 2px solid var(--crimson);
+      padding-left: .75rem;
+    }
+
+    /* ── Footer ───────────────────────────────────────── */
+    footer {
+      background: var(--navy-darker);
+      color: rgba(255,255,255,.3);
+      text-align: center;
+      padding: 1.5rem;
+      font-size: .78rem;
+    }
+
+    /* ── Responsive ───────────────────────────────────── */
+    @media (max-width: 600px) {
+      .hero-stats { gap: 1.5rem; }
+      .grid { grid-template-columns: 1fr; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .card { transition: none; }
+      .spinner { animation: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ── Header (white) ───────────────────────────────── -->
+<header class="site-header">
+  <div class="header-inner">
+    <div class="logo-wrap">
+      <img src="Lumiere_logo.png" alt="Lumiere Education" />
+    </div>
+    <div class="header-meta">
+      <div class="header-meta-text">
+        Data refreshed hourly<br>
+        <span id="last-updated">—</span>
+      </div>
+      <button id="refresh-btn" onclick="refreshData()">↻ Refresh</button>
+    </div>
+  </div>
+</header>
+
+<!-- ── Hero (dark navy) ──────────────────────────────── -->
+<section class="hero">
+  <div class="hero-inner">
+    <h1>Student Research<br><em>Profiles</em></h1>
+    <p class="hero-sub">Students' publication and competition successes across Lumiere's research programs.</p>
+    <div class="hero-stats">
+      <div class="stat-item">
+        <span class="stat-num" id="stat-total">—</span>
+        <span class="stat-label">Students</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="stat-countries">—</span>
+        <span class="stat-label">Countries</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num" id="stat-fields">—</span>
+        <span class="stat-label">Research Fields</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── Controls (dark navy, sticky) ─────────────────── -->
+<div class="controls-bar">
+  <div class="controls-inner">
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="search" id="search" placeholder="Search by name, question, field…" autocomplete="off" />
+    </div>
+    <div class="filter-group">
+      <select id="filter-vertical" aria-label="Filter by vertical">
+        <option value="">All Verticals</option>
+      </select>
+      <select id="filter-cohort" aria-label="Filter by cohort">
+        <option value="">All Cohorts</option>
+      </select>
+      <select id="filter-year" aria-label="Filter by graduation year">
+        <option value="">All Years</option>
+      </select>
+      <select id="filter-country" aria-label="Filter by country">
+        <option value="">All Countries</option>
+      </select>
+    </div>
+    <span id="result-count"></span>
+  </div>
+</div>
+
+<!-- ── Main (white) ──────────────────────────────────── -->
+<main class="main">
+  <div class="grid" id="grid">
+    <div class="state-msg">
+      <div class="spinner"></div>
+      <p>Loading student profiles…</p>
+    </div>
+  </div>
+</main>
+
+<!-- ── Modal ─────────────────────────────────────────── -->
+<div class="modal-backdrop" id="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="modal-name">
+  <div class="modal">
+    <button class="modal-close" id="modal-close" aria-label="Close">✕</button>
+    <div class="modal-name" id="modal-name"></div>
+    <div class="card-meta" id="modal-tags"></div>
+    <div class="modal-divider"></div>
+    <div id="modal-body"></div>
+  </div>
+</div>
+
+<!-- ── Footer ────────────────────────────────────────── -->
+<footer>
+  © Lumiere Education · Profiles updated automatically from Airtable every hour
+</footer>
+
+<script>
+  const $ = id => document.getElementById(id);
+  const esc = s => s ? String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : '';
+  const isURL = s => { try { return /^https?:\/\//.test(s) && Boolean(new URL(s)); } catch { return false; } }
+  const isISEFStatus = s => s && ['ISEF Winner', 'ISEF Finalist'].includes(s.trim());
+
+  let ALL_STUDENTS = [];
+
+  async function loadData() {
+    try {
+      const res = await fetch('data.json?t=' + Date.now());
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      ALL_STUDENTS = data.students || [];
+      if (data.updatedAt) {
+        const d = new Date(data.updatedAt);
+        $('last-updated').textContent = d.toLocaleString('en-US', {
+          month: 'short', day: 'numeric',
+          hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
+        });
+      }
+      initStats();
+      resetFilters();
+      populateFilters();
+      renderCards(ALL_STUDENTS);
+    } catch (e) {
+      $('grid').innerHTML = `
+        <div class="state-msg">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <h2>Profiles unavailable</h2>
+          <p>Could not load <code>data.json</code>. Run the GitHub Actions workflow to generate it.</p>
+        </div>`;
+    }
+  }
+
+  function resetFilters() {
+    ['filter-vertical','filter-cohort','filter-year','filter-country'].forEach(id => {
+      const sel = $(id);
+      while (sel.options.length > 1) sel.remove(1);
+    });
+    $('search').value = '';
+  }
+
+  function initStats() {
+    $('stat-total').textContent     = ALL_STUDENTS.length;
+    $('stat-countries').textContent = new Set(ALL_STUDENTS.map(s => s.country).filter(Boolean)).size;
+    $('stat-fields').textContent    = new Set(ALL_STUDENTS.map(s => s.mentorField).filter(Boolean)).size;
+  }
+
+  function populateFilters() {
+    const verticals = [...new Set(ALL_STUDENTS.map(s => s.vertical).filter(Boolean))].sort();
+    const cohorts   = [...new Set(ALL_STUDENTS.map(s => s.cohort).filter(Boolean))].sort();
+    const years     = [...new Set(ALL_STUDENTS.map(s => String(s.graduationYear || '')).filter(Boolean))].sort();
+    const countries = [...new Set(ALL_STUDENTS.map(s => s.country).filter(Boolean))].sort();
+
+    const fill = (id, items) => {
+      const sel = $(id);
+      items.forEach(v => {
+        const o = document.createElement('option');
+        o.value = v; o.textContent = v;
+        sel.appendChild(o);
+      });
+    };
+    fill('filter-vertical', verticals);
+    fill('filter-cohort', cohorts);
+    fill('filter-year', years);
+    fill('filter-country', countries);
+  }
+
+  function getFiltered() {
+    const q        = $('search').value.trim().toLowerCase();
+    const vertical = $('filter-vertical').value;
+    const cohort   = $('filter-cohort').value;
+    const year     = $('filter-year').value;
+    const country  = $('filter-country').value;
+
+    return ALL_STUDENTS.filter(s => {
+      if (vertical && s.vertical !== vertical) return false;
+      if (cohort   && s.cohort !== cohort) return false;
+      if (year     && String(s.graduationYear || '') !== year) return false;
+      if (country  && s.country !== country) return false;
+      if (q) {
+        const hay = [s.studentName, s.researchQuestion, s.mentorField, s.journal,
+                     s.cohort, s.country, s.vertical, s.isefStatus]
+          .join(' ').toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+  }
+
+  function applyFilters() { renderCards(getFiltered()); }
+
+  ['search','filter-vertical','filter-cohort','filter-year','filter-country'].forEach(id => {
+    $(id).addEventListener('input', applyFilters);
+    $(id).addEventListener('change', applyFilters);
+  });
+
+  function renderCards(students) {
+    const grid = $('grid');
+    $('result-count').textContent = `${students.length} profile${students.length !== 1 ? 's' : ''}`;
+
+    if (!students.length) {
+      grid.innerHTML = `
+        <div class="state-msg">
+          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+          <h2>No profiles found</h2>
+          <p>Try adjusting your search or filters.</p>
+        </div>`;
+      return;
+    }
+
+    grid.innerHTML = students.map((s, i) => `
+      <article class="card" tabindex="0" data-idx="${i}" role="button" aria-label="View profile for ${esc(s.studentName)}">
+        <div class="card-header">
+          <div class="card-name">${esc(s.studentName) || '—'}</div>
+          ${s.country ? `<span class="card-country">${esc(s.country)}</span>` : ''}
+        </div>
+        <div class="card-meta">
+          ${s.vertical                  ? `<span class="tag tag-vertical">${esc(s.vertical)}</span>` : ''}
+          ${s.cohort                    ? `<span class="tag tag-cohort">${esc(s.cohort)}</span>` : ''}
+          ${s.graduationYear            ? `<span class="tag tag-year">Class of ${esc(String(s.graduationYear))}</span>` : ''}
+          ${s.mentorField               ? `<span class="tag tag-field">${esc(s.mentorField)}</span>` : ''}
+          ${isISEFStatus(s.isefStatus)  ? `<span class="tag tag-isef">${esc(s.isefStatus)}</span>` : ''}
+        </div>
+        ${s.researchQuestion ? `<p class="card-question">${esc(s.researchQuestion)}</p>` : ''}
+        ${s.journal ? `<p class="card-journal">${
+          isURL(s.journal)
+            ? `<a href="${esc(s.journal)}" target="_blank" rel="noopener">View Journal →</a>`
+            : esc(s.journal)
+        }</p>` : ''}
+      </article>`).join('');
+
+    grid.querySelectorAll('.card').forEach(card => {
+      const open = () => openModal(students[+card.dataset.idx]);
+      card.addEventListener('click', open);
+      card.addEventListener('keydown', e => (e.key === 'Enter' || e.key === ' ') && open());
+    });
+  }
+
+  function openModal(s) {
+    $('modal-name').textContent = s.studentName || '—';
+    $('modal-tags').innerHTML = [
+      s.vertical                 ? `<span class="tag tag-vertical">${esc(s.vertical)}</span>` : '',
+      s.cohort                   ? `<span class="tag tag-cohort">${esc(s.cohort)}</span>` : '',
+      s.graduationYear           ? `<span class="tag tag-year">Class of ${esc(String(s.graduationYear))}</span>` : '',
+      s.mentorField              ? `<span class="tag tag-field">${esc(s.mentorField)}</span>` : '',
+      isISEFStatus(s.isefStatus) ? `<span class="tag tag-isef">${esc(s.isefStatus)}</span>` : '',
+      s.country                  ? `<span class="tag" style="background:var(--off);border:1px solid var(--border);color:var(--muted)">${esc(s.country)}</span>` : '',
+    ].join('');
+
+    const section = (label, value, italic = false) => value ? `
+      <div class="modal-section">
+        <div class="modal-label">${label}</div>
+        <div class="modal-value${italic ? ' italic' : ''}">${value}</div>
+      </div>` : '';
+
+    const journalVal = s.journal
+      ? (isURL(s.journal)
+          ? `<a href="${esc(s.journal)}" target="_blank" rel="noopener" style="color:var(--navy);text-decoration:underline;text-underline-offset:2px">${esc(s.journal)}</a>`
+          : esc(s.journal))
+      : '';
+
+    // ISEF Winners/Finalists use isefPublicationLink; others use publicationLink
+    const rawPubLink = isISEFStatus(s.isefStatus)
+      ? (s.isefPublicationLink || '')
+      : (s.publicationLink || '');
+    const pubVal = rawPubLink
+      ? `<a href="${esc(rawPubLink)}" target="_blank" rel="noopener" style="color:var(--navy);text-decoration:underline;text-underline-offset:2px">${esc(rawPubLink)}</a>`
+      : '';
+
+    $('modal-body').innerHTML = [
+      section('Research Question', esc(s.researchQuestion), true),
+      journalVal ? '<div class="modal-divider"></div>' + section('Journal of Acceptance', journalVal) : '',
+      s.isefStatus ? '<div class="modal-divider"></div>' + section('ISEF Status', esc(s.isefStatus)) : '',
+      pubVal ? '<div class="modal-divider"></div>' + section('Publication', pubVal) : '',
+    ].join('');
+
+    $('modal-backdrop').classList.add('open');
+    $('modal-close').focus();
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeModal() {
+    $('modal-backdrop').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  async function refreshData() {
+    const btn = $('refresh-btn');
+    btn.textContent = '↻ Refreshing…';
+    btn.disabled = true;
+    await loadData();
+    btn.textContent = '↻ Refresh';
+    btn.disabled = false;
+  }
+
+  $('modal-close').addEventListener('click', closeModal);
+  $('modal-backdrop').addEventListener('click', e => e.target === $('modal-backdrop') && closeModal());
+  document.addEventListener('keydown', e => e.key === 'Escape' && closeModal());
+
+  loadData();
+</script>
+</body>
+</html>
