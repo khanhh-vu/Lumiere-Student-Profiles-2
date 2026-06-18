@@ -74,24 +74,6 @@
       font-weight: 600;
       color: var(--navy);
     }
-    #refresh-btn {
-      background: var(--navy);
-      color: white;
-      border: none;
-      border-radius: 6px;
-      padding: .5rem .9rem;
-      font-family: var(--ff-body);
-      font-size: .8rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: .4rem;
-      transition: background .15s;
-      white-space: nowrap;
-    }
-    #refresh-btn:hover { background: var(--crimson); }
-    #refresh-btn:disabled { opacity: .6; cursor: not-allowed; }
 
     /* ── Hero (dark navy) ─────────────────────────────── */
     .hero {
@@ -436,7 +418,7 @@
         Data refreshed hourly<br>
         <span id="last-updated">—</span>
       </div>
-      <button id="refresh-btn" onclick="refreshData()">↻ Refresh</button>
+
     </div>
   </div>
 </header>
@@ -526,7 +508,7 @@
 
   async function loadData() {
     try {
-      const res = await fetch('data.json?t=' + Date.now());
+      const res = await fetch('/api/data');
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       ALL_STUDENTS = data.students || [];
@@ -708,20 +690,13 @@
     document.body.style.overflow = '';
   }
 
-  async function refreshData() {
-    const btn = $('refresh-btn');
-    btn.textContent = '↻ Refreshing…';
-    btn.disabled = true;
-    await loadData();
-    btn.textContent = '↻ Refresh';
-    btn.disabled = false;
-  }
-
   $('modal-close').addEventListener('click', closeModal);
   $('modal-backdrop').addEventListener('click', e => e.target === $('modal-backdrop') && closeModal());
   document.addEventListener('keydown', e => e.key === 'Escape' && closeModal());
 
+  // Initial load + auto-refresh every hour
   loadData();
+  setInterval(loadData, 60 * 60 * 1000);
 </script>
 </body>
 </html>
